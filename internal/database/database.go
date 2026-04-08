@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"time"
+
+	"gitpigeon/internal/config"
 
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
@@ -26,21 +27,21 @@ type Service interface {
 }
 
 type service struct {
-	db *sql.DB
+	db     *sql.DB
+	dbPath string
 }
 
 var (
-	dburl      = os.Getenv("BLUEPRINT_DB_URL")
 	dbInstance *service
 )
 
-func New() Service {
+func New(cfg *config.Config) Service {
 	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance
 	}
 
-	db, err := sql.Open("sqlite3", dburl)
+	db, err := sql.Open("sqlite3", cfg.DBPath)
 	if err != nil {
 		// This will not be a connection error, but a DSN parse error or
 		// another initialization error.
@@ -54,7 +55,8 @@ func New() Service {
 	}
 
 	dbInstance = &service{
-		db: db,
+		db:     db,
+		dbPath: cfg.DBPath,
 	}
 	return dbInstance
 }
@@ -115,6 +117,6 @@ func (s *service) Health() map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	log.Printf("Disconnected from database: %s", dburl)
+	log.Printf("Disconnected from database: %s", s.dbPath)
 	return s.db.Close()
 }

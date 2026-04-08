@@ -3,12 +3,11 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 
+	"gitpigeon/internal/config"
 	"gitpigeon/internal/database"
 )
 
@@ -18,12 +17,12 @@ type Server struct {
 	db database.Service
 }
 
-func NewServer() *http.Server {
-	port, _ := strconv.Atoi(os.Getenv("PORT"))
+func NewServer(cfg *config.Config) *http.Server {
+	port := cfg.AppPort
 	NewServer := &Server{
 		port: port,
 
-		db: database.New(),
+		db: database.New(cfg),
 	}
 
 	// Declare Server config
