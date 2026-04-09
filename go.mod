@@ -8,6 +8,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.41
 	github.com/pressly/goose/v3 v3.27.0
+	github.com/wneessen/go-mail v0.7.2
 )
 
 require (
