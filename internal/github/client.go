@@ -3,7 +3,6 @@ package githubapi
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 
 var (
 	ErrRepositoryNotFound = errors.New("repository not found")
+	ErrNoRelease          = errors.New("no release found")
 	ErrRateLimitExceeded  = errors.New("rate limit exceeded")
 )
 
@@ -77,16 +77,24 @@ func (t *transportWithToken) RoundTrip(req *http.Request) (*http.Response, error
 	return t.base.RoundTrip(cloned)
 }
 
+// handleGitHubError maps common GitHub API errors to sentinel errors.
+func handleGitHubError(err error, resp *github.Response, notFoundErr error) error {
+	if resp != nil && resp.StatusCode == http.StatusNotFound {
+		return notFoundErr
+	}
+	if _, ok := err.(*github.RateLimitError); ok {
+		return ErrRateLimitExceeded
+	}
+	if _, ok := err.(*github.AbuseRateLimitError); ok {
+		return ErrRateLimitExceeded
+	}
+	return err
+}
+
 func (c *client) GetRepository(ctx context.Context, owner, repo string) (*Repository, error) {
 	repository, resp, err := c.ghClient.Repositories.Get(ctx, owner, repo)
 	if err != nil {
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return nil, fmt.Errorf("repository not found: %w", ErrRepositoryNotFound)
-		}
-		if _, ok := err.(*github.RateLimitError); ok {
-			return nil, fmt.Errorf("rate limit exceeded: %w", ErrRateLimitExceeded)
-		}
-		return nil, err
+		return nil, handleGitHubError(err, resp, ErrRepositoryNotFound)
 	}
 
 	return &Repository{
@@ -99,13 +107,7 @@ func (c *client) GetRepository(ctx context.Context, owner, repo string) (*Reposi
 func (c *client) GetLatestRelease(ctx context.Context, owner, repo string) (*Release, error) {
 	release, resp, err := c.ghClient.Repositories.GetLatestRelease(ctx, owner, repo)
 	if err != nil {
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return nil, fmt.Errorf("repository not found: %w", ErrRepositoryNotFound)
-		}
-		if _, ok := err.(*github.RateLimitError); ok {
-			return nil, fmt.Errorf("rate limit exceeded: %w", ErrRateLimitExceeded)
-		}
-		return nil, fmt.Errorf("failed to get latest release: %w", err)
+		return nil, handleGitHubError(err, resp, ErrNoRelease)
 	}
 
 	var publishedAt time.Time

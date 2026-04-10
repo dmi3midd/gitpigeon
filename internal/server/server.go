@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	_ "github.com/joho/godotenv/autoload"
-
 	"gitpigeon/internal/config"
 	"gitpigeon/internal/database"
 )
@@ -17,22 +15,25 @@ type Server struct {
 	db database.Service
 }
 
-func NewServer(cfg *config.Config) *http.Server {
-	port := cfg.AppPort
-	NewServer := &Server{
-		port: port,
+func NewServer(cfg *config.Config) (*http.Server, error) {
+	db, err := database.New(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize database: %w", err)
+	}
 
-		db: database.New(cfg),
+	s := &Server{
+		port: cfg.AppPort,
+		db:   db,
 	}
 
 	// Declare Server config
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", NewServer.port),
-		Handler:      NewServer.RegisterRoutes(),
+		Addr:         fmt.Sprintf(":%d", s.port),
+		Handler:      s.RegisterRoutes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
 
-	return server
+	return server, nil
 }

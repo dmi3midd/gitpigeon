@@ -12,8 +12,8 @@ type Config struct {
 	DBPath       string `mapstructure:"DB_PATH"`
 	ApiKey       string `mapstructure:"API_KEY"`
 	GitHubToken  string `mapstructure:"GITHUB_TOKEN"`
-	ScanInterval int    `mapstructure:"SCAN_INTERVAL"`
-	SMTP         SMTPConfig
+	ScanInterval int    `mapstructure:"SCAN_INTERVAL"` // in minutes
+	SMTP         SMTPConfig `mapstructure:",squash"`
 }
 
 type SMTPConfig struct {

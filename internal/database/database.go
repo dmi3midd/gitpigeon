@@ -4,13 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
 	"gitpigeon/internal/config"
 
-	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pressly/goose/v3"
 )
@@ -24,6 +22,9 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	// DB returns the underlying *sql.DB for use by stores.
+	DB() *sql.DB
 }
 
 type service struct {
@@ -31,34 +32,33 @@ type service struct {
 	dbPath string
 }
 
-var (
-	dbInstance *service
-)
-
-func New(cfg *config.Config) Service {
-	// Reuse Connection
-	if dbInstance != nil {
-		return dbInstance
-	}
-
+func New(cfg *config.Config) (Service, error) {
 	db, err := sql.Open("sqlite3", cfg.DBPath)
 	if err != nil {
-		// This will not be a connection error, but a DSN parse error or
-		// another initialization error.
-		log.Fatal(err)
-	}
-	if err := goose.SetDialect("sqlite3"); err != nil {
-		log.Fatal(err)
-	}
-	if err := goose.Up(db, "migrations"); err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	dbInstance = &service{
+	// Enable foreign key constraints for SQLite
+	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
+		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
+	}
+
+	if err := goose.SetDialect("sqlite3"); err != nil {
+		return nil, fmt.Errorf("failed to set goose dialect: %w", err)
+	}
+	if err := goose.Up(db, "migrations"); err != nil {
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	return &service{
 		db:     db,
 		dbPath: cfg.DBPath,
-	}
-	return dbInstance
+	}, nil
+}
+
+// DB returns the underlying *sql.DB for use by stores.
+func (s *service) DB() *sql.DB {
+	return s.db
 }
 
 // Health checks the health of the database connection by pinging the database.
@@ -74,7 +74,6 @@ func (s *service) Health() map[string]string {
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
-		log.Fatalf("db down: %v", err) // Log the error and terminate the program
 		return stats
 	}
 
@@ -117,6 +116,5 @@ func (s *service) Health() map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	log.Printf("Disconnected from database: %s", s.dbPath)
 	return s.db.Close()
 }

@@ -27,6 +27,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 }
 
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
-	jsonResp, _ := json.Marshal(s.db.Health())
+	w.Header().Set("Content-Type", "application/json")
+	jsonResp, err := json.Marshal(s.db.Health())
+	if err != nil {
+		http.Error(w, `{"error":"internal server error"}`, http.StatusInternalServerError)
+		return
+	}
 	_, _ = w.Write(jsonResp)
 }

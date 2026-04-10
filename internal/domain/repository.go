@@ -1,4 +1,4 @@
-package models
+package domain
 
 type Repository struct {
 	ID          int    `json:"id" db:"id"`
