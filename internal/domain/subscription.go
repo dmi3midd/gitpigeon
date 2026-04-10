@@ -59,11 +59,11 @@ type SubscriptionService interface {
 	//  4. Generate confirmation and unsubscribe tokens
 	//  5. Create subscription (confirmed=false)
 	//  6. Send confirmation email
-	Subscribe(ctx context.Context, email, repo string) (*Subscription, error)
+	Subscribe(ctx context.Context, email, repo string) (*SubscribeResult, error)
 	// Confirm confirms a subscription by its confirmation token.
 	Confirm(ctx context.Context, token string) error
 	// Unsubscribe removes a subscription by its unsubscribe token.
 	Unsubscribe(ctx context.Context, token string) error
 	// GetSubscriptions returns all active (confirmed) subscriptions for the given email.
-	GetSubscriptions(ctx context.Context, email string) ([]Subscription, error)
+	GetSubscriptions(ctx context.Context, email string) ([]SubscriptionInfo, error)
 }
