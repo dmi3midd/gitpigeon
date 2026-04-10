@@ -2,13 +2,13 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strconv"
 	"time"
 
 	"gitpigeon/internal/config"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pressly/goose/v3"
 )
@@ -23,17 +23,17 @@ type Service interface {
 	// It returns an error if the connection cannot be closed.
 	Close() error
 
-	// DB returns the underlying *sql.DB for use by stores.
-	DB() *sql.DB
+	// DB returns the underlying *sqlx.DB for use by stores.
+	DB() *sqlx.DB
 }
 
 type service struct {
-	db     *sql.DB
+	db     *sqlx.DB
 	dbPath string
 }
 
 func New(cfg *config.Config) (Service, error) {
-	db, err := sql.Open("sqlite3", cfg.DBPath)
+	db, err := sqlx.Open("sqlite3", cfg.DBPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
@@ -46,7 +46,7 @@ func New(cfg *config.Config) (Service, error) {
 	if err := goose.SetDialect("sqlite3"); err != nil {
 		return nil, fmt.Errorf("failed to set goose dialect: %w", err)
 	}
-	if err := goose.Up(db, "migrations"); err != nil {
+	if err := goose.Up(db.DB, "migrations"); err != nil {
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
@@ -56,8 +56,8 @@ func New(cfg *config.Config) (Service, error) {
 	}, nil
 }
 
-// DB returns the underlying *sql.DB for use by stores.
-func (s *service) DB() *sql.DB {
+// DB returns the underlying *sqlx.DB for use by stores.
+func (s *service) DB() *sqlx.DB {
 	return s.db
 }
 
@@ -118,3 +118,4 @@ func (s *service) Health() map[string]string {
 func (s *service) Close() error {
 	return s.db.Close()
 }
+

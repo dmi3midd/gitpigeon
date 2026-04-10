@@ -6,7 +6,7 @@ require (
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-chi/cors v1.2.2
 	github.com/google/go-github/v84 v84.0.0
-	github.com/joho/godotenv v1.5.1
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.41
 	github.com/pressly/goose/v3 v3.27.0
 	github.com/wneessen/go-mail v0.7.2
