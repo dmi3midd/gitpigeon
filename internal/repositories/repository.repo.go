@@ -66,6 +66,18 @@ func (r *RepositoryRepo) GetByOwnerAndName(ctx context.Context, owner, name stri
 	return &repo, nil
 }
 
+// ListAll returns all repositories from the database.
+func (r *RepositoryRepo) ListAll(ctx context.Context) ([]domain.Repository, error) {
+	query := `SELECT id, owner, name, last_seen_tag, created_at, updated_at FROM repositories ORDER BY id`
+
+	var repos []domain.Repository
+	if err := r.db.SelectContext(ctx, &repos, query); err != nil {
+		return nil, fmt.Errorf("repository list all: %w", err)
+	}
+
+	return repos, nil
+}
+
 func (r *RepositoryRepo) UpdateLastSeenTag(ctx context.Context, id int, tag string) error {
 	query := `UPDATE repositories SET last_seen_tag = ?, updated_at = ? WHERE id = ?`
 
@@ -105,4 +117,3 @@ func (r *RepositoryRepo) Delete(ctx context.Context, id int) error {
 
 	return nil
 }
-
