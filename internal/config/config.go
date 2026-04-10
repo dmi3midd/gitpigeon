@@ -8,11 +8,13 @@ import (
 )
 
 type Config struct {
-	AppPort      int    `mapstructure:"APP_PORT"`
-	DBPath       string `mapstructure:"DB_PATH"`
-	ApiKey       string `mapstructure:"API_KEY"`
-	GitHubToken  string `mapstructure:"GITHUB_TOKEN"`
-	ScanInterval int    `mapstructure:"SCAN_INTERVAL"` // in minutes
+	AppPort    int    `mapstructure:"APP_PORT"`
+	DBPath     string `mapstructure:"DB_PATH"`
+	ApiKey     string `mapstructure:"API_KEY"`
+	AppBaseURL string `mapstructure:"APP_BASE_URL"`
+
+	GitHubToken  string     `mapstructure:"GITHUB_TOKEN"`
+	ScanInterval int        `mapstructure:"SCAN_INTERVAL"` // in minutes
 	SMTP         SMTPConfig `mapstructure:",squash"`
 }
 
@@ -27,6 +29,7 @@ type SMTPConfig struct {
 func LoadConfig() *Config {
 	viper.SetDefault("APP_PORT", "8080")
 	viper.SetDefault("DB_PATH", "./sql.db")
+	viper.SetDefault("APP_BASE_URL", "http://localhost:8080")
 	viper.SetDefault("SCAN_INTERVAL", 15)
 	viper.SetDefault("SMTP_PORT", 587)
 

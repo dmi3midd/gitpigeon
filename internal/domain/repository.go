@@ -19,6 +19,8 @@ type RepositoryRepo interface {
 	GetByID(ctx context.Context, id int) (*Repository, error)
 	// GetByOwnerAndName returns a repository by owner and name.
 	GetByOwnerAndName(ctx context.Context, owner, name string) (*Repository, error)
+	// ListAll returns all repositories.
+	ListAll(ctx context.Context) ([]Repository, error)
 	// UpdateLastSeenTag updates the last_seen_tag and updated_at for a repository.
 	UpdateLastSeenTag(ctx context.Context, id int, tag string) error
 	// Delete removes a repository by its ID.
