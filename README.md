@@ -4,36 +4,12 @@ Gitpigeon - API that allows users to subscribe to email notifications about new 
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
 
-## MakeFile
+### 1. Клонувати репо
+git clone [<url>](https://github.com/dmi3midd/gitpigeon) && cd gitpigeon
+### 2. Створити .env з шаблону і заповнити свої значення
+cp .env.example .env
+### 3. Запустити
+docker compose up --build
 
-Run build make command with tests
-```bash
-make all
-```
 
-Build the application
-```bash
-make build
-```
-
-Run the application
-```bash
-make run
-```
-
-Live reload the application:
-```bash
-make watch
-```
-
-Run the test suite:
-```bash
-make test
-```
-
-Clean up binary from the last build:
-```bash
-make clean
-```
