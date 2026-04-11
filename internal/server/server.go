@@ -11,6 +11,7 @@ import (
 	"gitpigeon/internal/handlers"
 	"gitpigeon/internal/notifier"
 	"gitpigeon/internal/repositories"
+	"gitpigeon/internal/scanner"
 	"gitpigeon/internal/service"
 )
 
@@ -20,12 +21,13 @@ type Server struct {
 
 	db      database.Service
 	handler *handlers.SubscriptionHandler
+	Scanner *scanner.Scanner
 }
 
-func NewServer(cfg *config.Config) (*http.Server, error) {
+func NewServer(cfg *config.Config) (*http.Server, *Server, error) {
 	db, err := database.New(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize database: %w", err)
+		return nil, nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
 
 	// Initialize repositories
@@ -38,7 +40,7 @@ func NewServer(cfg *config.Config) (*http.Server, error) {
 	// Initialize email notifier
 	emailNotifier, err := notifier.NewEmailNotifier(&cfg.SMTP)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize notifier: %w", err)
+		return nil, nil, fmt.Errorf("failed to initialize notifier: %w", err)
 	}
 
 	// Initialize service layer
@@ -53,15 +55,25 @@ func NewServer(cfg *config.Config) (*http.Server, error) {
 	// Initialize handlers
 	subHandler := handlers.NewSubscriptionHandler(subService)
 
+	// Initialize scanner
+	releaseScanner := scanner.NewScanner(
+		repoRepo,
+		subRepo,
+		ghClient,
+		emailNotifier,
+		cfg.ScanInterval,
+	)
+
 	s := &Server{
 		port:    cfg.AppPort,
 		apiKey:  cfg.ApiKey,
 		db:      db,
 		handler: subHandler,
+		Scanner: releaseScanner,
 	}
 
 	// Declare Server config
-	server := &http.Server{
+	httpServer := &http.Server{
 		Addr:         fmt.Sprintf(":%d", s.port),
 		Handler:      s.RegisterRoutes(),
 		IdleTimeout:  time.Minute,
@@ -69,5 +81,5 @@ func NewServer(cfg *config.Config) (*http.Server, error) {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	return server, nil
+	return httpServer, s, nil
 }
