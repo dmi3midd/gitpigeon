@@ -28,7 +28,7 @@ func (r *SubscriptionRepo) Create(ctx context.Context, sub *domain.Subscription)
 	if err != nil {
 		return nil, fmt.Errorf("subscription create: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	if rows.Next() {
 		if err := rows.StructScan(sub); err != nil {

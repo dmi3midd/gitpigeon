@@ -27,7 +27,7 @@ func (r *RepositoryRepo) Create(ctx context.Context, repo *domain.Repository) (*
 	if err != nil {
 		return nil, fmt.Errorf("repository create: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	if rows.Next() {
 		if err := rows.StructScan(repo); err != nil {

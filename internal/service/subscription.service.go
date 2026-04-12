@@ -104,7 +104,7 @@ func (s *SubscriptionService) Subscribe(ctx context.Context, email, repoFullName
 		UnsubscribeToken: unsubscribeToken,
 	}
 
-	sub, err = s.subRepo.Create(ctx, sub)
+	_, err = s.subRepo.Create(ctx, sub)
 	if err != nil {
 		// Check if it's a unique constraint violation (duplicate subscription)
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
@@ -217,12 +217,8 @@ func isValidEmail(email string) bool {
 		return false
 	}
 
-	domain := email[at+1:]
-	if !strings.Contains(domain, ".") {
-		return false
-	}
-
-	return true
+	domainPart := email[at+1:]
+	return strings.Contains(domainPart, ".")
 }
 
 // generateToken creates a cryptographically secure random token.
