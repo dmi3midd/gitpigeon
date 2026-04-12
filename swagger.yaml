@@ -1,0 +1,194 @@
+openapi: 3.0.3
+info:
+  title: GitPigeon API
+  description: API for subscribing to email notifications about new releases of GitHub repositories.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /api/subscribe:
+    post:
+      summary: Subscribe to release notifications
+      description: Subscribe an email to release notifications for a given GitHub repository (format owner/repo).
+      operationId: subscribe
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscribeRequest'
+      responses:
+        '200':
+          description: Subscription created successfully. A confirmation email has been sent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscribeResponse'
+        '400':
+          description: Invalid request body or repository format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized. Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Repository not found on GitHub.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Subscription already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: GitHub API rate limit exceeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/confirm/{token}:
+    get:
+      summary: Confirm email subscription
+      description: Confirm a subscription using the token sent via email.
+      operationId: confirmSubscription
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Confirmation token from the email.
+      responses:
+        '302':
+          description: Subscription confirmed. Redirects to a success page.
+        '404':
+          description: Invalid or expired confirmation token. Redirects to an error page.
+
+  /api/unsubscribe/{token}:
+    get:
+      summary: Unsubscribe from release notifications
+      description: Unsubscribe from release notifications using the token provided in notification emails.
+      operationId: unsubscribe
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unsubscribe token from the notification email.
+      responses:
+        '302':
+          description: Successfully unsubscribed. Redirects to a confirmation page.
+        '404':
+          description: Invalid or expired unsubscribe token. Redirects to an error page.
+
+  /api/subscriptions:
+    get:
+      summary: Get active subscriptions
+      description: Get all active (confirmed) subscriptions for a given email.
+      operationId: getSubscriptions
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+          description: Email address to query subscriptions for.
+      responses:
+        '200':
+          description: List of active subscriptions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriptionResponse'
+        '400':
+          description: Missing or invalid email parameter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized. Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    SubscribeRequest:
+      type: object
+      required:
+        - email
+        - repo
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        repo:
+          type: string
+          example: golang/go
+          description: "GitHub repository in format owner/repo"
+
+    SubscribeResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Confirmation email sent. Please check your inbox."
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        repo:
+          type: string
+          example: golang/go
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-10T12:00:00Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "repository not found"
