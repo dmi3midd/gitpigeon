@@ -4,6 +4,7 @@ Gitpigeon - API that allows users to subscribe to email notifications about new 
 
 ## Getting Started
 
+*в файлі [DEVELOPMENT.md](DEVELOPMENT.md) описано хід розробки*
 
 ### 1. Клонувати репо
 git clone [<url>](https://github.com/dmi3midd/gitpigeon) && cd gitpigeon
