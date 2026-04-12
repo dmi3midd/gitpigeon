@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+	"sync"
 
 	githubapi "gitpigeon/internal/github"
 	"gitpigeon/internal/notifier"
@@ -21,9 +22,12 @@ func (m *MockGitHubClient) GetLatestRelease(ctx context.Context, owner, repo str
 }
 
 // MockNotifier is a mock implementation of notifier.Notifier.
+// Thread-safe: Calls are protected by a mutex for use with async goroutines.
 type MockNotifier struct {
 	NotifyFn func(msg *notifier.Notification, to string) error
-	Calls    []NotifyCall
+
+	mu    sync.Mutex
+	Calls []NotifyCall
 }
 
 type NotifyCall struct {
@@ -32,9 +36,20 @@ type NotifyCall struct {
 }
 
 func (m *MockNotifier) Notify(msg *notifier.Notification, to string) error {
+	m.mu.Lock()
 	m.Calls = append(m.Calls, NotifyCall{Msg: msg, To: to})
+	m.mu.Unlock()
 	if m.NotifyFn != nil {
 		return m.NotifyFn(msg, to)
 	}
 	return nil
+}
+
+// GetCalls returns a thread-safe copy of all recorded calls.
+func (m *MockNotifier) GetCalls() []NotifyCall {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	result := make([]NotifyCall, len(m.Calls))
+	copy(result, m.Calls)
+	return result
 }

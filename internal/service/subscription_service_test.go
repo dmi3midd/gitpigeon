@@ -52,9 +52,10 @@ func TestSubscribe_Success(t *testing.T) {
 	assert.Contains(t, result.Message, "Confirmation email sent")
 
 	// Give the async goroutine time to run
-	time.Sleep(50 * time.Millisecond)
-	assert.Len(t, notif.Calls, 1)
-	assert.Equal(t, "user@example.com", notif.Calls[0].To)
+	time.Sleep(100 * time.Millisecond)
+	calls := notif.GetCalls()
+	assert.Len(t, calls, 1)
+	assert.Equal(t, "user@example.com", calls[0].To)
 }
 
 func TestSubscribe_CreatesRepoInDBWhenNotExists(t *testing.T) {
